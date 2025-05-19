@@ -1,4 +1,85 @@
+# Enhanced Disk Scheduling Simulator (Modified)
+import tkinter as tk
+from tkinter import messagebox
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.animation as animation
 
+class DiskSchedulingSimulator:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Disk Scheduling Simulator - Visual Learning Edition")
+        self.root.geometry("850x700")
+        self.setup_gui()
+        self.canvas = None
+        self.ani = None  # Store animation reference
+
+    def setup_gui(self):
+        # Create main container frames
+        left_frame = tk.Frame(self.root, padx=20, pady=10)
+        left_frame.pack(side=tk.LEFT, fill=tk.Y)
+        
+        right_frame = tk.Frame(self.root, padx=20, pady=10)
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+        # Input section in left frame
+        input_frame = tk.LabelFrame(left_frame, text="Input Parameters", padx=10, pady=10)
+        input_frame.pack(fill=tk.X, pady=5)
+
+        tk.Label(input_frame, text="Enter Disk Request Sequence\n(space-separated):").pack(pady=5)
+        self.request_entry = tk.Entry(input_frame, width=40)
+        self.request_entry.pack(pady=5)
+
+        tk.Label(input_frame, text="Enter Initial Head Position:").pack(pady=5)
+        self.head_entry = tk.Entry(input_frame, width=20)
+        self.head_entry.pack(pady=5)
+
+        tk.Label(input_frame, text="Enter Maximum Cylinder\n(default 199):").pack(pady=5)
+        self.max_cylinder_entry = tk.Entry(input_frame, width=20)
+        self.max_cylinder_entry.insert(0, "199")
+        self.max_cylinder_entry.pack(pady=5)
+
+        # Algorithm selection in left frame
+        algo_frame = tk.LabelFrame(left_frame, text="Algorithm Selection", padx=10, pady=10)
+        algo_frame.pack(fill=tk.X, pady=5)
+
+        self.algorithm_var = tk.IntVar(value=1)
+        algorithms = ["FCFS", "SSTF", "SCAN", "C-SCAN", "LOOK", "C-LOOK"]
+        for i, name in enumerate(algorithms, 1):
+            tk.Radiobutton(algo_frame, text=name, variable=self.algorithm_var, value=i).pack(anchor=tk.W)
+
+        # SCAN direction in left frame
+        direction_frame = tk.LabelFrame(left_frame, text="Direction", padx=10, pady=10)
+        direction_frame.pack(fill=tk.X, pady=5)
+
+        self.scan_direction_var = tk.StringVar(value="right")
+        tk.Radiobutton(direction_frame, text="Right", variable=self.scan_direction_var, value="right").pack(anchor=tk.W)
+        tk.Radiobutton(direction_frame, text="Left", variable=self.scan_direction_var, value="left").pack(anchor=tk.W)
+
+        # Buttons frame
+        button_frame = tk.Frame(left_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+        
+        # Run button in left frame
+        tk.Button(button_frame, text="Run Simulation", command=self.run_simulation, 
+                 bg="#4CAF50", fg="white", padx=20, pady=5).pack(side=tk.LEFT, padx=5)
+        
+        # Compare button in left frame
+        self.compare_button = tk.Button(button_frame, text="Compare with Optimal", 
+                                      command=self.show_comparison, state=tk.DISABLED,
+                                      bg="#2196F3", fg="white", padx=20, pady=5)
+        self.compare_button.pack(side=tk.LEFT, padx=5)
+
+        # Results and visualization in right frame
+        self.result_label = tk.Label(right_frame, text="", wraplength=600, 
+                                   justify="left", font=("Arial", 11, "bold"))
+        self.result_label.pack(pady=5)
+
+        self.canvas_frame = tk.Frame(right_frame)
+        self.canvas_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        # Store simulation results
+        self.simulation_results = None
     def visualize(self, order, title, callback=None):
         def animate(i):
             if i == 0:
