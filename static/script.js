@@ -133,7 +133,51 @@ function displayComparisonResults(optimal, selectedAlgo, selectedSeekTime) {
   });
 }
 
+async function visualizeSingle(sequence, algorithm) {
+  const labels = [];
+  const values = [];
+  const colorMap = {
+    FCFS: 'blue',
+    SSTF: 'green',
+    SCAN: 'orange',
+    'C-SCAN': 'purple',
+    'C-LOOK': 'brown',
+    LOOK: 'red'
+  };
 
+  if (chart) chart.destroy();
+
+  chart = new Chart(chartCanvas, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Head Movement',
+        data: values,
+        borderColor: colorMap[algorithm] || 'blue',
+        fill: false,
+        tension: 0.3,
+        pointBackgroundColor: 'white',
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      animation: false,
+      scales: {
+        y: { title: { display: true, text: 'Cylinder Number' } },
+        x: { title: { display: true, text: 'Sequence Order' } }
+      }
+    }
+  });
+
+  for (let i = 0; i < sequence.length; i++) {
+    await new Promise(res => setTimeout(res, 400));
+    chart.data.labels.push(i);
+    chart.data.datasets[0].data.push(sequence[i]);
+    chart.update();
+  }
+}
 
 async function visualizeBoth(selectedSeq, optimalData, selectedAlgo) {
   const labels = selectedSeq.map((_, i) => i);
