@@ -80,6 +80,108 @@ class DiskSchedulingSimulator:
         
         # Store simulation results
         self.simulation_results = None
+         def fcfs(self, requests, head):
+        order = [head] + requests
+        return order, self.calculate_seek_time(order)
+
+    def sstf(self, requests, head):
+        requests = requests.copy()
+        order = [head]
+        while requests:
+            closest = min(requests, key=lambda x: abs(x - head))
+            requests.remove(closest)
+            order.append(closest)
+            head = closest
+        return order, self.calculate_seek_time(order)
+
+    def scan(self, requests, head, direction='right', max_cylinder=199):
+        requests = sorted(set(requests))
+        order = [head]
+        if direction == 'right':
+            right = [r for r in requests if r >= head]
+            left = [r for r in requests if r < head]
+            order += right
+            if right and right[-1] != max_cylinder:
+                order.append(max_cylinder)
+            order += left[::-1]
+        else:
+            left = [r for r in requests if r <= head]
+            right = [r for r in requests if r > head]
+            order += left[::-1]
+            if left and left[0] != 0:
+                order.append(0)
+            order += right
+        return order, self.calculate_seek_time(order)
+
+    def c_scan(self, requests, head, direction='right', max_cylinder=199):
+        requests = sorted(set(requests))
+        order = [head]
+        
+        if direction == 'right':
+            # Move right first
+            right = [r for r in requests if r >= head]
+            left = [r for r in requests if r < head]
+            order += right
+            if right and right[-1] != max_cylinder:
+                order.append(max_cylinder)
+            if left:
+                order.append(0)  # Jump to beginning
+                order += left
+        else:
+            # Move left first
+            left = [r for r in requests if r <= head]
+            right = [r for r in requests if r > head]
+            order += left[::-1]  # Reverse left requests
+            if left and left[0] != 0:
+                order.append(0)
+            if right:
+                order.append(max_cylinder)  # Jump to end
+                order += right[::-1]  # Reverse right requests
+                
+        return order, self.calculate_seek_time(order)
+
+    def look(self, requests, head, direction='right', max_cylinder=199):
+        requests = sorted(set(requests))
+        order = [head]
+        
+        if direction == 'right':
+            # Move right first
+            right = [r for r in requests if r >= head]
+            left = [r for r in requests if r < head]
+            order += right
+            order += left[::-1]  # Reverse left requests
+        else:
+            # Move left first
+            left = [r for r in requests if r <= head]
+            right = [r for r in requests if r > head]
+            order += left[::-1]  # Reverse left requests
+            order += right
+            
+        return order, self.calculate_seek_time(order)
+
+    def c_look(self, requests, head, direction='right', max_cylinder=199):
+        requests = sorted(set(requests))
+        order = [head]
+        
+        if direction == 'right':
+            # Move right first
+            right = [r for r in requests if r >= head]
+            left = [r for r in requests if r < head]
+            order += right
+            if left:
+                order += left  # Serve left requests in order
+        else:
+            # Move left first
+            left = [r for r in requests if r <= head]
+            right = [r for r in requests if r > head]
+            order += left[::-1]  # Reverse left requests
+            if right:
+                order += right[::-1]  # Reverse right requests
+                
+        return order, self.calculate_seek_time(order)
+
+    def calculate_seek_time(self, order):
+        return sum(abs(order[i] - order[i - 1]) for i in range(1, len(order)))
     def visualize(self, order, title, callback=None):
         def animate(i):
             if i == 0:
